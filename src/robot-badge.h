@@ -20,10 +20,28 @@
 #include <bluefruit.h>
 
 // ---------------------------------------------------------------------------
+// RobotBadgeWiring
+// ---------------------------------------------------------------------------
+
+struct RobotBadgeWiring
+{
+    static constexpr uint8_t LED0 = D3;
+    static constexpr uint8_t LED1 = D4;
+    static constexpr uint8_t LED2 = D5;
+    static constexpr uint8_t LED3 = D6;
+    static constexpr uint8_t LED4 = D7;
+    static constexpr uint8_t LED5 = D8;
+    static constexpr uint8_t LED6 = LED_BLUE;
+    static constexpr uint8_t LED7 = LED_GREEN;
+    static constexpr uint8_t LED8 = LED_RED;
+};
+
+// ---------------------------------------------------------------------------
 // RobotBadge
 // ---------------------------------------------------------------------------
 
 class RobotBadge final
+    : public RobotBadgeWiring
 {
 public: // public interface
     RobotBadge() = default;
@@ -42,13 +60,19 @@ public: // public interface
 
     auto loop() -> void;
 
+    auto switch_mode() -> void;
+
     auto accelerate() -> void;
 
     auto decelerate() -> void;
 
 private: // private data
-    uint32_t _delay = 250;
-    uint16_t _index = 0;
+    uint32_t _ptime = 0u;
+    uint32_t _ctime = 0u;
+    uint32_t _state = 0u;
+    uint32_t _delay = 200u;
+    uint16_t _index = 0u;
+    uint8_t  _mode  = 0u;
 };
 
 // ---------------------------------------------------------------------------

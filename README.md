@@ -14,6 +14,8 @@ Many thanks to Paul and Henri for kindly giving me one of these badges so I coul
 
 The board is built around a Nordic nRF52840 SoC (Cortex-M4F, BLE 5.0) and uses the Adafruit nRF52 Arduino core via PlatformIO.
 
+This firmware drives the badge LEDs through three different animation modes, each highlighting a distinct visual pattern on the eye LEDs and the onboard RGB LED. The active mode rotates automatically every 30 seconds, and can also be switched on demand from the serial console.
+
 This project ships with a `Makefile` that wraps every step of the firmware lifecycle on top of the PlatformIO CLI. The available targets are:
 
 | Target        | Description                                                                          |
@@ -130,6 +132,7 @@ The following keys are recognised by the firmware while the monitor is attached:
 | Key | Action                                                    |
 |-----|-----------------------------------------------------------|
 | `!` | Reboot the board into DFU mode (Device Firmware Upgrade). |
+| `m` | Switch to the next animation mode.                        |
 | `+` | Speed up the animation.                                   |
 | `-` | Slow down the animation.                                  |
 

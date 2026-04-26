@@ -56,6 +56,9 @@ void loop()
             case '!':
                 enterSerialDfu();
                 break;
+            case 'm':
+                Badge.switch_mode();
+                break;
             case '+':
                 Badge.accelerate();
                 break;

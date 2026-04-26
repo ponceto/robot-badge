@@ -89,91 +89,122 @@ const uint16_t g_patterns[] = {
 }
 
 // ---------------------------------------------------------------------------
-// Wiring
-// ---------------------------------------------------------------------------
-
-namespace {
-
-struct Wiring
-{
-    static constexpr uint8_t LED0 = D3;
-    static constexpr uint8_t LED1 = D4;
-    static constexpr uint8_t LED2 = D5;
-    static constexpr uint8_t LED3 = D6;
-    static constexpr uint8_t LED4 = D7;
-    static constexpr uint8_t LED5 = D8;
-    static constexpr uint8_t LED6 = LED_BLUE;
-    static constexpr uint8_t LED7 = LED_GREEN;
-    static constexpr uint8_t LED8 = LED_RED;
-};
-
-}
-
-// ---------------------------------------------------------------------------
 // RobotBadge
 // ---------------------------------------------------------------------------
 
 auto RobotBadge::setup() -> void
 {
-    ::pinMode(Wiring::LED0, OUTPUT);
-    ::pinMode(Wiring::LED1, OUTPUT);
-    ::pinMode(Wiring::LED2, OUTPUT);
-    ::pinMode(Wiring::LED3, OUTPUT);
-    ::pinMode(Wiring::LED4, OUTPUT);
-    ::pinMode(Wiring::LED5, OUTPUT);
-    ::pinMode(Wiring::LED6, OUTPUT);
-    ::pinMode(Wiring::LED7, OUTPUT);
-    ::pinMode(Wiring::LED8, OUTPUT);
+    _ctime = _ptime = ::millis();
+    ::pinMode(LED0, OUTPUT);
+    ::pinMode(LED1, OUTPUT);
+    ::pinMode(LED2, OUTPUT);
+    ::pinMode(LED3, OUTPUT);
+    ::pinMode(LED4, OUTPUT);
+    ::pinMode(LED5, OUTPUT);
+    ::pinMode(LED6, OUTPUT);
+    ::pinMode(LED7, OUTPUT);
+    ::pinMode(LED8, OUTPUT);
 }
 
 auto RobotBadge::loop() -> void
 {
-    const     auto index = _index++;
-    constexpr auto count = countof(g_patterns);
-    constexpr auto debug = true;
+    constexpr bool     debug    = true;
+    constexpr uint32_t duration = 30000u;
 
-    if(index < count) {
-        const uint16_t pattern = g_patterns[index];
-        const uint8_t leds[9] = {
-            static_cast<uint8_t>((pattern >> 0) & 1),
-            static_cast<uint8_t>((pattern >> 1) & 1),
-            static_cast<uint8_t>((pattern >> 2) & 1),
-            static_cast<uint8_t>((pattern >> 3) & 1),
-            static_cast<uint8_t>((pattern >> 4) & 1),
-            static_cast<uint8_t>((pattern >> 5) & 1),
-            static_cast<uint8_t>((pattern >> 6) & 1),
-            static_cast<uint8_t>((pattern >> 7) & 1),
-            static_cast<uint8_t>((pattern >> 8) & 1),
-        };
+    auto update_mode0 = [&]() -> void
+    {
+        const     auto index = _index++;
+        constexpr auto count = countof(g_patterns);
+
+        if(index < count) {
+            _state = g_patterns[index];
+        }
+        else {
+            _index = 0;
+            _state = 0;
+        }
+    };
+
+    auto update_mode1 = [&]() -> void
+    {
+        const uint32_t bit0 = (_state << 16);
+        const uint32_t bit3 = (_state << 13);
+        const uint32_t msw  = (~(bit0 ^ bit3) & 0x10000);
+        const uint32_t lsw  = ((_state >> 1) & 0x0ffff);
+
+        _state = (msw | lsw);
+    };
+
+    auto update_mode2 = [&]() -> void
+    {
+        const uint32_t bit0 = (_state >> 0);
+        const uint32_t bit3 = (_state >> 3);
+        const uint32_t msw  = (~(bit0 ^ bit3) & 0x00001);
+        const uint32_t lsw  = ((_state << 1) & 0xffffe);
+
+        _state = (msw | lsw);
+    };
+
+    auto update = [&]() -> void
+    {
+        _ctime = ::millis();
+        if(((_ctime - _ptime) >= duration)) {
+            switch_mode();
+        }
+        switch(_mode) {
+            case 0: // patterns
+                update_mode0();
+                break;
+            case 1: // LFSR to the right
+                update_mode1();
+                break;
+            case 2: // LFSR to the left
+                update_mode2();
+                break;
+            default:
+                break;
+        }
+    };
+
+    auto output = [&]() -> void
+    {
+        const uint32_t state = _state;
+
         if(debug != false) {
             const char buffer[] = {
-                (leds[8] ? 'X' : '-'),
-                (leds[7] ? 'X' : '-'),
-                (leds[6] ? 'X' : '-'),
-                (leds[5] ? 'X' : '-'),
-                (leds[4] ? 'X' : '-'),
-                (leds[3] ? 'X' : '-'),
-                (leds[2] ? 'X' : '-'),
-                (leds[1] ? 'X' : '-'),
-                (leds[0] ? 'X' : '-'),
+                ((state & 0x0100) != 0 ? 'O' : '-'),
+                ((state & 0x0080) != 0 ? 'O' : '-'),
+                ((state & 0x0040) != 0 ? 'O' : '-'),
+                ((state & 0x0020) != 0 ? 'O' : '-'),
+                ((state & 0x0010) != 0 ? 'O' : '-'),
+                ((state & 0x0008) != 0 ? 'O' : '-'),
+                ((state & 0x0004) != 0 ? 'O' : '-'),
+                ((state & 0x0002) != 0 ? 'O' : '-'),
+                ((state & 0x0001) != 0 ? 'O' : '-'),
                 '\0'
             };
             Serial.println(buffer);
         }
-        ::digitalWrite(Wiring::LED0, (leds[0] != 0 ? HIGH : LOW));
-        ::digitalWrite(Wiring::LED1, (leds[1] != 0 ? HIGH : LOW));
-        ::digitalWrite(Wiring::LED2, (leds[2] != 0 ? HIGH : LOW));
-        ::digitalWrite(Wiring::LED3, (leds[3] != 0 ? HIGH : LOW));
-        ::digitalWrite(Wiring::LED4, (leds[4] != 0 ? HIGH : LOW));
-        ::digitalWrite(Wiring::LED5, (leds[5] != 0 ? HIGH : LOW));
-        ::digitalWrite(Wiring::LED6, (leds[6] != 0 ? LOW : HIGH));
-        ::digitalWrite(Wiring::LED7, (leds[7] != 0 ? LOW : HIGH));
-        ::digitalWrite(Wiring::LED8, (leds[8] != 0 ? LOW : HIGH));
+        ::digitalWrite(LED0, ((state & 0x0001) != 0 ? HIGH : LOW));
+        ::digitalWrite(LED1, ((state & 0x0002) != 0 ? HIGH : LOW));
+        ::digitalWrite(LED2, ((state & 0x0004) != 0 ? HIGH : LOW));
+        ::digitalWrite(LED3, ((state & 0x0008) != 0 ? HIGH : LOW));
+        ::digitalWrite(LED4, ((state & 0x0010) != 0 ? HIGH : LOW));
+        ::digitalWrite(LED5, ((state & 0x0020) != 0 ? HIGH : LOW));
+        ::digitalWrite(LED6, ((state & 0x0040) != 0 ? LOW : HIGH));
+        ::digitalWrite(LED7, ((state & 0x0080) != 0 ? LOW : HIGH));
+        ::digitalWrite(LED8, ((state & 0x0100) != 0 ? LOW : HIGH));
         ::delay(_delay);
-    }
-    else {
-        _index = 0;
-    }
+    };
+
+    update();
+    output();
+}
+
+auto RobotBadge::switch_mode() -> void
+{
+    _mode = ((_mode + 1) % 3);
+    _ptime = _ctime;
 }
 
 auto RobotBadge::accelerate() -> void
