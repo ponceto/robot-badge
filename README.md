@@ -79,6 +79,14 @@ This procedure has not been tested, as I do not own any Apple product. No suppor
 
 The recommended method is to stop using Windows and switch to a real operating system. Either of the two procedures above will then apply.
 
+#### Finalizing installation
+
+Install the Seeed Studio Seeedboards package:
+
+```
+pio pkg install -g -p "https://github.com/Seeed-Studio/platform-seeedboards.git"
+```
+
 ### Build the project
 
 To build the project, simply type:
